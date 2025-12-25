@@ -9,6 +9,14 @@ import Foundation
 import Combine
 
 class HomeViewModel : ObservableObject {
+    
+    @Published var statistics : [StatisticModel] = [
+        StatisticModel(title: "Bitcoin", value: "123456789", percentageChange: 1),
+        StatisticModel(title: "Ethereum", value: "123456789"),
+        StatisticModel(title: "Title", value: "123456789"),
+        StatisticModel(title: "Tether", value: "123456789", percentageChange: -7),
+    ]
+    
     @Published var allCoins: [CoinPresentationModel] = []
     @Published var portfolioCoins: [CoinPresentationModel] = []
     
@@ -24,11 +32,14 @@ class HomeViewModel : ObservableObject {
     }
     
     func addSubscribers() async {
+        
+        //Removed this becase now we suscribed two a the same time. in the searchText
         /*dataservice.$allCoins
             .sink { (returnedCoins) in
                 self.allCoins = returnedCoins
             }.store(in: &cancellables)*/
         
+        //Update allCoins
         $searchText
             .combineLatest(dataservice.$allCoins)
             .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
