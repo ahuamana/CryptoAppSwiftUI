@@ -11,10 +11,7 @@ import Combine
 class CoinDataservice {
     @Published var allCoins: [CoinPresentationModel] = []
     var coinSubscription: AnyCancellable?
-    
-    //ApiKey
-    private let apiKey = "CG-RavWfeuXWAW11uj7PPxxQGU2"
-    
+ 
     init() {
         getCoins()
     }
@@ -30,7 +27,7 @@ class CoinDataservice {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 10
-        request.setValue(apiKey, forHTTPHeaderField: "x-cg-demo-api-key")
+        request.setValue(Constants.apiKeyValue, forHTTPHeaderField: Constants.apiKeyPrefix)
         
         coinSubscription = NetworkingManager.download(request: request)
             .decode(type: [CoinModel].self, decoder: JSONDecoder())

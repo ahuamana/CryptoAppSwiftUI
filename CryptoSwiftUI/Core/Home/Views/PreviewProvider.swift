@@ -15,8 +15,13 @@ extension DeveloperPreview {
     }
 }
 
+struct Constants {
+    static let apiKeyPrefix = "X-CMC_PRO_API_KEY"
+    static let apiKeyValue = "CG-RavWfeuXWAW11uj7PPxxQGU2"
+}
+
 class DeveloperPreview {
-    static let instance = DeveloperPreview()
+    private static let instance = DeveloperPreview()
     
     private init() {
         
