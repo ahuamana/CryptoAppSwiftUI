@@ -24,9 +24,34 @@ class HomeViewModel : ObservableObject {
     }
     
     func addSubscribers() async {
-        dataservice.$allCoins
+        /*dataservice.$allCoins
             .sink { (returnedCoins) in
                 self.allCoins = returnedCoins
-            }.store(in: &cancellables)
+            }.store(in: &cancellables)*/
+        
+        $searchText
+            .combineLatest(dataservice.$allCoins)
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
+            .map(filterCoins)
+            .sink { [weak self] (filteredCoins) in
+                self?.allCoins = filteredCoins
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func filterCoins(text:String, coins: [CoinPresentationModel]) -> [CoinPresentationModel] {
+        guard !searchText.isEmpty else {
+            return coins
+        }
+        
+        let lowercaseText = searchText.lowercased()
+        
+        let filteredCoins = coins.filter { (coin) -> Bool in
+            return coin.name.lowercased().contains(lowercaseText) ||
+            coin.symbol.lowercased().contains(lowercaseText) ||
+            coin.id.lowercased().contains(lowercaseText)
+        }
+        
+        return filteredCoins
     }
 }
