@@ -65,8 +65,13 @@ struct AllCoinsList : View {
     @EnvironmentObject private var vm : HomeViewModel
     var body : some View {
         List(vm.allCoins) { coin in
-            CoinRowView(coin: coin, showHoldingsColum: false)
-                .listRowInsets(.init(top: 10, leading: 0, bottom: 10, trailing: 10))
+            NavigationLink(destination: {
+                DetailView(coin: coin)
+            }, label: {
+                CoinRowView(coin: coin, showHoldingsColum: false)
+                    .listRowInsets(.init(top: 10, leading: 0, bottom: 10, trailing: 10))
+            })
+            
         }
         .listStyle(PlainListStyle())
     }
