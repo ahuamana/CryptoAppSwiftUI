@@ -46,42 +46,31 @@ class HomeViewModel : ObservableObject {
             }
             .store(in: &cancellables)
         
+        //Update portfolioCoins
+        $allCoins
+            .combineLatest(portfolioDataService.$savedEntities)
+            .map(mapAllCoinsToPortfolioCoins)
+            .sink { [weak self] (returnedPortfolioCoins) in
+                self?.portfolioCoins = returnedPortfolioCoins
+            }
+            .store(in: &cancellables)
+        
         //Update marketData
         marketDataService.$marketData
+            .combineLatest($portfolioCoins)
             .map(mapGlobalMarketData)
             .sink { [weak self] (returnedStats) in
                 self?.statistics = returnedStats
             }
             .store(in: &cancellables)
         
-        //Update portfolioCoins
-        $allCoins
-            .combineLatest(portfolioDataService.$savedEntities)
-            .map{ (coinModels, portfolioEntities) -> [CoinPresentationModel] in
-                    coinModels
-                    .compactMap { (coin) -> CoinPresentationModel? in
-                        guard let entity = portfolioEntities.first(where: { $0.coinId == coin.id }) else {
-                            return nil
-                        }
-                        
-                        return coin.updateCurrentHoldings(entity.amount)
-                        
-                    }
-            }
-            .sink { [weak self] (returnedPortfolioCoins) in
-                self?.portfolioCoins = returnedPortfolioCoins
-            }
-            .store(in: &cancellables)
-            
-        
-            
     }
     
     func updatePortfolio(coin: CoinPresentationModel, amount:Double) {
         portfolioDataService.updatePorfolio(coin: coin, amount: amount )
     }
     
-    private func mapGlobalMarketData(marketDataModel:MarketPresentationModel?) -> [StatisticModel] {
+    private func mapGlobalMarketData(marketDataModel:MarketPresentationModel?, porfolioCoins: [CoinPresentationModel]) -> [StatisticModel] {
         var stats: [StatisticModel] = []
         
         guard let data = marketDataModel else {
@@ -94,7 +83,23 @@ class HomeViewModel : ObservableObject {
         
         let btcDominance = StatisticModel(title: "BTC Dominance", value: "\(data.btcDominance)")
         
-        let portFolio = StatisticModel(title: "Portfolio Value", value: "$0.00", percentageChange: 0)
+        let portfolioValue = porfolioCoins.map({ $0.currentHoldingsValue}).reduce(0, +)
+        
+        
+        let previousValue = porfolioCoins.map { coin -> Double in
+            print("priceChangePercentage24HInCurrency: \(coin.priceChangePercentage24HInCurrency.asCurrencyWith2Decimals())")
+            let currentValue = coin.currentHoldingsValue
+            let percentageChange = coin.priceChangePercentage24HInCurrency / 100
+            let previousValue = currentValue / (1 + percentageChange)
+            return previousValue
+        }
+        .reduce(0, +)
+        
+        let percentageChange = ((portfolioValue - previousValue) / previousValue) * 100
+        
+        // 110 / (1 + 10%) = 100
+        
+        let portFolio = StatisticModel(title: "Portfolio Value", value: portfolioValue.asCurrencyWith2Decimals(), percentageChange: percentageChange)
         
         stats.append(contentsOf: [
             marketCap,
@@ -104,6 +109,18 @@ class HomeViewModel : ObservableObject {
         ])
         
         return stats
+    }
+    
+    private func mapAllCoinsToPortfolioCoins(_ allCoins: [CoinPresentationModel], _ porfolioEntities: [PorfolioEntity]) -> [CoinPresentationModel] {
+        allCoins
+        .compactMap { (coin) -> CoinPresentationModel? in
+            guard let entity = porfolioEntities.first(where: { $0.coinId == coin.id }) else {
+                return nil
+            }
+            
+            return coin.updateCurrentHoldings(entity.amount)
+            
+        }
     }
     
     private func filterCoins(text:String, coins: [CoinPresentationModel]) -> [CoinPresentationModel] {
