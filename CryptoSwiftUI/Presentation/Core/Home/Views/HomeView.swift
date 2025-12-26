@@ -66,7 +66,9 @@ struct AllCoinsList : View {
     var body : some View {
         List(vm.allCoins) { coin in
             NavigationLink(destination: {
-                DetailView(coin: coin)
+                LazyView(
+                    DetailView(coin: coin)
+                )
             }, label: {
                 CoinRowView(coin: coin, showHoldingsColum: false)
                     .listRowInsets(.init(top: 10, leading: 0, bottom: 10, trailing: 10))
