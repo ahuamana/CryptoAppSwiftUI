@@ -39,20 +39,23 @@ struct PorfolioView: View {
                 }
                 
             })
+            .onChange(of: vm.searchText, perform: {value in
+                if value == "" {
+                    removeSelectedCoin()
+                }
+            })
         }
         
     }
     
-    func updateTheSelectedCoin(coin:CoinPresentationModel) {
-        self.selectedCoin = coin
-    }
+    
 }
 
 extension PorfolioView {
     private var coinLogoList : some View {
         ScrollView(.horizontal, showsIndicators: false, content: {
             LazyHStack(spacing:10) {
-                ForEach (vm.allCoins) { coin in
+                ForEach (vm.searchText.isEmpty ? vm.portfolioCoins : vm.allCoins) { coin in
                     CoinLogoView(coin: coin)
                         .frame(width: 75)
                         .padding(4)
@@ -72,6 +75,18 @@ extension PorfolioView {
                 }
             }
         })
+    }
+    
+    func updateTheSelectedCoin(coin:CoinPresentationModel) {
+        self.selectedCoin = coin
+        
+        if let porfolioCoin = vm.portfolioCoins.first(where: { $0.id == coin.id }) {
+            let amount = porfolioCoin.currentHoldings
+            quantityText = "\(amount)"
+        } else {
+            quantityText = ""
+        }
+        
     }
     
     private func getCurrentValue() -> Double {
@@ -127,9 +142,12 @@ extension PorfolioView {
     }
     
     private func saveButtonPressed() {
-        guard let coin = selectedCoin else {return }
+        guard let coin = selectedCoin,
+                let amount = Double(quantityText)
+        else {return }
         
         //save to porfolio
+        vm.updatePortfolio(coin: coin, amount: amount)
         
         //show checkmark
         withAnimation(.easeIn) {
