@@ -63,7 +63,7 @@ struct CoinRowViewRight:View {
     let coin: CoinPresentationModel
     
     var body: some View {
-        VStack() {
+        VStack(alignment: .trailing) {
             Text("\(coin.currentPrice.asCurrencyWith6Decimals())")
                 .bold()
                 .foregroundColor(.theme.accent)
